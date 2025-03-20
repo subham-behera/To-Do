@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-cinzel: 'Cinzel Decorative', serif;
+    --font-josefin: 'Josefin Sans', sans-serif;
+    --custom-pink: #FF6CFFAF;
+    --hero-pattern: url('/Holi/holi2.jpg'); /* Adjust the path as needed */
+  }
+
+  .font-cinzel {
+    font-family: var(--font-cinzel);
+  }
+
+  .font-josefin {
+    font-family: var(--font-josefin);
+  }
+
+  .text-customPink {
+    color: var(--custom-pink);
+  }
+
+  .bg-customPink {
+    background-color: var(--custom-pink);
+  }
+
+  .bg-hero-pattern {
+    background-image: var(--hero-pattern);
+  }
+
+  @keyframes spin-slow {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  .animate-spin-slow {
+    animation: spin-slow 4s linear infinite;
+  }
+}
+
+/* Example component styles (if needed) */
+@layer components {
+  /* ... your component styles ... */
+}
+
+/* Example utility styles (if needed) */
+@layer utilities {
+  /* ... your utility styles ... */
+}
