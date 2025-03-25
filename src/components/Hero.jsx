@@ -3,27 +3,39 @@ import { GoPlus } from "react-icons/go";
 import Item from "./Item";
 
 function Hero() {
-    const [date, setDate] = useState();
-    const [day, setDay] = useState();
-    const [items, setItems] = useState([
-        "Journal"
-    ]);
+    const [date, setDate] = useState("");
+    const [day, setDay] = useState("");
+    const [items, setItems] = useState(["Journal"]); 
 
     useEffect(() => {
         const today = new Date();
-        const dateOfMonth = today.getDate();
-        const monthName = today.toLocaleString('en-IN', { month: 'long' });
-        const year = today.getFullYear();
-        const dayOfWeek = today.toLocaleString('en-IN', { weekday: 'long' });
+        const formattedDate = `${today.getDate()}-${today.getMonth() + 1}-${today.getFullYear()}`; // e.g., "25-3-2025"
 
-        const formattedDate = `${dateOfMonth} ${monthName} ${year}`;
+        const savedDate = localStorage.getItem("savedDate");
 
-        setDate(formattedDate);
-        setDay(dayOfWeek);
+        if (savedDate === formattedDate) {
+            const savedItems = JSON.parse(localStorage.getItem("tasks")) || ["Journal"];
+            setItems(savedItems);
+        } else {
+            localStorage.setItem("tasks", JSON.stringify(["Journal"]));
+            localStorage.setItem("savedDate", formattedDate);
+        }
+
+        setDate(`${today.getDate()} ${today.toLocaleString('en-IN', { month: 'long' })} ${today.getFullYear()}`);
+        setDay(today.toLocaleString('en-IN', { weekday: 'long' }));
     }, []);
 
     const addItem = () => {
-        setItems([...items, "New Task"]);
+        const newItems = [...items, "New Task"];
+        setItems(newItems);
+        localStorage.setItem("tasks", JSON.stringify(newItems));
+    };
+
+    const updateItem = (index, newText) => {
+        const updatedItems = [...items];
+        updatedItems[index] = newText;
+        setItems(updatedItems);
+        localStorage.setItem("tasks", JSON.stringify(updatedItems));
     };
 
     return (
@@ -38,13 +50,13 @@ function Hero() {
                     To-Do List
                 </div>
                 <div className="flex flex-col gap-y-3 px-6 overflow-y-auto">
-                    {items.map((item, index) => {
-                        return <Item key={index} itemName={item} />;
-                    })}
+                    {items.map((item, index) => (
+                        <Item key={index} index={index} itemName={item} updateItem={updateItem} />
+                    ))}
                 </div>
                 <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2 mb-6">
                     <button onClick={addItem}>
-                        <GoPlus className="text-4xl bg-purple-300 rounded-full shadow-md hover:shadow-2xl" />
+                        <GoPlus className="text-4xl cursor-pointer bg-purple-300 rounded-full shadow-md hover:shadow-2xl" />
                     </button>
                 </div>
             </div>
