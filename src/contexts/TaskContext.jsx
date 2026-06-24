@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import useLocalStorage from '../hooks/useLocalStorage';
+import { DEFAULT_CATEGORIES } from '../constants/taskCategories';
 
 const TaskContext = createContext();
 
@@ -7,14 +8,17 @@ export const useTaskContext = () => useContext(TaskContext);
 
 export const TaskProvider = ({ children }) => {
   const [tasks, setTasks] = useLocalStorage("tasks", [
-    { id: "1", text: "Journal", completed: false, createdAt: new Date().toISOString() }
+    { id: "1", text: "Journal my thoughts", completed: false, category: "personal", priority: "low", subtasks: [], note: "Spend 10 minutes reflecting on today.", createdAt: new Date().toISOString() }
   ]);
+  const [categories, setCategories] = useLocalStorage("categories", DEFAULT_CATEGORIES);
   const [filter, setFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [priorityFilter, setPriorityFilter] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("createdAt");
   const [stats, setStats] = useState({ total: 0, completed: 0, remaining: 0 });
+  const [editingTask, setEditingTask] = useState(null);
+  const [activeTab, setActiveTab] = useState("tasks"); // 'tasks', 'categories', 'analytics'
 
   useEffect(() => {
     // Calculate statistics
@@ -32,7 +36,9 @@ export const TaskProvider = ({ children }) => {
       const task = {
         ...newTask,
         id: Date.now().toString(),
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        subtasks: newTask.subtasks || [],
+        note: newTask.note || ""
       };
       setTasks([...tasks, task]);
       return true;
@@ -41,7 +47,7 @@ export const TaskProvider = ({ children }) => {
   };
 
   const updateTask = (id, updatedTask) => {
-    setTasks(tasks.map(task => task.id === id ? updatedTask : task));
+    setTasks(tasks.map(task => task.id === id ? { ...updatedTask, subtasks: updatedTask.subtasks || [] } : task));
   };
 
   const deleteTask = (id) => {
@@ -52,21 +58,70 @@ export const TaskProvider = ({ children }) => {
     setTasks(tasks.filter(task => !task.completed));
   };
 
+  // Custom Categories Functions
+  const addCategory = (name, colorId) => {
+    if (!name.trim()) return false;
+    const id = name.trim().toLowerCase().replace(/\s+/g, '-');
+    if (categories.some(cat => cat.id === id)) return false;
+    setCategories([...categories, { id, name: name.trim(), colorId }]);
+    return true;
+  };
+
+  const deleteCategory = (id) => {
+    setCategories(categories.filter(cat => cat.id !== id));
+    // Reset tasks categorized with this category to empty
+    setTasks(tasks.map(task => task.category === id ? { ...task, category: "" } : task));
+    if (categoryFilter === id) {
+      setCategoryFilter("");
+    }
+  };
+
+  // Sub-task Functions
+  const addSubtask = (taskId, text) => {
+    if (!text.trim()) return;
+    setTasks(tasks.map(task => {
+      if (task.id === taskId) {
+        const subtasks = [...(task.subtasks || [])];
+        subtasks.push({
+          id: Date.now().toString(),
+          text: text.trim(),
+          completed: false
+        });
+        return { ...task, subtasks };
+      }
+      return task;
+    }));
+  };
+
+  const toggleSubtask = (taskId, subtaskId) => {
+    setTasks(tasks.map(task => {
+      if (task.id === taskId) {
+        const subtasks = (task.subtasks || []).map(sub => 
+          sub.id === subtaskId ? { ...sub, completed: !sub.completed } : sub
+        );
+        return { ...task, subtasks };
+      }
+      return task;
+    }));
+  };
+
+  const deleteSubtask = (taskId, subtaskId) => {
+    setTasks(tasks.map(task => {
+      if (task.id === taskId) {
+        const subtasks = (task.subtasks || []).filter(sub => sub.id !== subtaskId);
+        return { ...task, subtasks };
+      }
+      return task;
+    }));
+  };
+
   // Filter and sort tasks
   const filteredTasks = tasks.filter(task => {
-    // Filter by completion status
     if (filter === "active" && task.completed) return false;
     if (filter === "completed" && !task.completed) return false;
-    
-    // Filter by category
     if (categoryFilter && task.category !== categoryFilter) return false;
-    
-    // Filter by priority
     if (priorityFilter && task.priority !== priorityFilter) return false;
-    
-    // Search by text
     if (searchQuery && !task.text.toLowerCase().includes(searchQuery.toLowerCase())) return false;
-    
     return true;
   });
 
@@ -92,6 +147,7 @@ export const TaskProvider = ({ children }) => {
   const value = {
     tasks,
     sortedTasks,
+    categories,
     filter, setFilter,
     categoryFilter, setCategoryFilter,
     priorityFilter, setPriorityFilter,
@@ -101,7 +157,14 @@ export const TaskProvider = ({ children }) => {
     addTask,
     updateTask,
     deleteTask,
-    archiveCompleted
+    archiveCompleted,
+    addCategory,
+    deleteCategory,
+    addSubtask,
+    toggleSubtask,
+    deleteSubtask,
+    editingTask, setEditingTask,
+    activeTab, setActiveTab
   };
 
   return (

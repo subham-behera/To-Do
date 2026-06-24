@@ -1,8 +1,20 @@
-import { CATEGORIES, PRIORITIES } from '../constants/taskCategories';
+import { CATEGORY_COLORS, PRIORITIES } from '../constants/taskCategories';
 
-export const getCategoryColor = (categoryId) => {
-  const category = CATEGORIES.find(cat => cat.id === categoryId);
-  return category ? category.color : 'bg-gray-200';
+export const getCategoryColor = (categoryId, categories) => {
+  const category = categories?.find(cat => cat.id === categoryId);
+  if (!category) return 'bg-slate-50 text-slate-600 border border-slate-100/50';
+  
+  const color = CATEGORY_COLORS.find(c => c.id === category.colorId);
+  if (!color) return 'bg-slate-50 text-slate-600 border border-slate-100/50';
+  
+  return `${color.bg} ${color.text} ${color.border}`;
+};
+
+export const getCategoryColorHex = (categoryId, categories) => {
+  const category = categories?.find(cat => cat.id === categoryId);
+  if (!category) return '#64748b'; // slate-500
+  const color = CATEGORY_COLORS.find(c => c.id === category.colorId);
+  return color ? color.hex : '#64748b';
 };
 
 export const getPriorityColor = (priorityId) => {
